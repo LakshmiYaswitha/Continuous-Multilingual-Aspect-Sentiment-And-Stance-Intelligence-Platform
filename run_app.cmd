@@ -1,0 +1,1 @@
+@echo off\ncd /d %~dp0\nset PYTHONPATH=%CD%\nstreamlit run app.py\n

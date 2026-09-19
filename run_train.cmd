@@ -1,0 +1,1 @@
+@echo off\ncd /d %~dp0\nif "%KAGGLE_API_TOKEN%"=="" (\n  echo Please set your Kaggle token first:\n  echo set KAGGLE_API_TOKEN=YOUR_TOKEN\n  exit /b 1\n)\nset PYTHONPATH=%CD%\npython scripts\kaggle_train.py --limit-per-dataset 10000\n

@@ -1,0 +1,1 @@
+@echo off\ncd /d %~dp0\nset PYTHONPATH=%CD%\npython scripts\train_absa_reference.py --limit 6000\n
