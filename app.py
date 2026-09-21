@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import re
+import json
+from pathlib import Path
 
 from src.pipeline import analyze_text, analyze_dataframe
 from src.ingest import extract_upload
@@ -49,6 +51,26 @@ if "batch_signature" not in st.session_state:
 @st.cache_resource
 def get_model():
     return load_sentiment_model()
+
+
+# ============================================================
+# EVALUATION METRICS
+# ============================================================
+
+ROOT = Path(__file__).resolve().parent
+SENTIMENT_METRICS_PATH = ROOT / "models" / "kaggle_sentiment_metrics.json"
+ABSA_METRICS_PATH = ROOT / "models" / "kaggle_absa_metrics.json"
+
+
+def load_json_metrics(path):
+    if not path.exists():
+        return None
+
+    try:
+        with open(path, "r", encoding="utf-8") as file:
+            return json.load(file)
+    except Exception:
+        return None
 
 
 # ============================================================
@@ -1596,290 +1618,331 @@ elif st.session_state.page == "Insights":
     )
 
     st.caption(
-        "Explore patterns across your analyzed batch."
+        "Model evaluation and research metrics from the trained reference systems."
     )
 
-    if st.session_state.batch is None:
+    sentiment_metrics = load_json_metrics(
+        SENTIMENT_METRICS_PATH
+    )
 
-        st.info(
-            "No batch results yet. "
-            "Go to Batch Analysis and analyze a file first."
+    absa_metrics = load_json_metrics(
+        ABSA_METRICS_PATH
+    )
+
+    # ========================================================
+    # SENTIMENT EVALUATION
+    # ========================================================
+
+    st.header("Sentiment Evaluation")
+
+    if sentiment_metrics is None:
+
+        st.warning(
+            "Sentiment evaluation metrics were not found. "
+            "Run scripts/kaggle_train.py first."
         )
 
     else:
 
-        df = st.session_state.batch
+        c1, c2, c3, c4, c5 = st.columns(5)
 
-        if df.empty:
-
-            st.warning(
-                "There are no records to analyze."
-            )
-
-        else:
-
-            sentiment_col = (
-                "Sentiment"
-                if "Sentiment" in df.columns
-                else "sentiment"
-            )
-
-            language_col = (
-                "Language"
-                if "Language" in df.columns
-                else "language"
-            )
-
-            confidence_col = (
-                "Confidence"
-                if "Confidence" in df.columns
-                else "confidence"
-            )
-
-            stance_col = (
-                "Stance"
-                if "Stance" in df.columns
-                else "stance"
-            )
-
-            c1, c2, c3, c4 = st.columns(4)
-
-            c1.metric(
-                "Records",
-                len(df),
-            )
-
-            c2.metric(
-                "Languages",
-                df[
-                    language_col
-                ].nunique(),
-            )
-
-            c3.metric(
-                "Positive",
-                int(
-                    (
-                        df[
-                            sentiment_col
-                        ] == "Positive"
-                    ).sum()
-                ),
-            )
-
-            c4.metric(
-                "Negative",
-                int(
-                    (
-                        df[
-                            sentiment_col
-                        ] == "Negative"
-                    ).sum()
-                ),
-            )
-
-            st.divider()
-
-            left, right = st.columns(2)
-
-            with left:
-
-                st.subheader(
-                    "Sentiment"
-                )
-
-                st.bar_chart(
-                    df[
-                        sentiment_col
-                    ].value_counts()
-                )
-
-            with right:
-
-                st.subheader(
-                    "Languages"
-                )
-
-                st.bar_chart(
-                    df[
-                        language_col
-                    ].value_counts()
-                )
-
-            if confidence_col in df.columns:
-
-                confidence = pd.to_numeric(
-                    df[
-                        confidence_col
-                    ],
-                    errors="coerce",
-                ).mean()
-
-                if pd.notna(confidence):
-
-                    st.subheader(
-                        "Average Confidence"
-                    )
-
-                    st.progress(
-                        max(
-                            0.0,
-                            min(
-                                1.0,
-                                float(confidence),
-                            ),
-                        ),
-                        text=f"{confidence:.1%}",
-                    )
-
-            if stance_col in df.columns:
-
-                st.subheader(
-                    "Stance"
-                )
-
-                st.bar_chart(
-                    df[
-                        stance_col
-                    ].value_counts()
-                )
-
-
-# ============================================================
-# PROJECT
-# ============================================================
-
-elif st.session_state.page == "Project":
-
-    st.title(
-        "CMASSIP Project"
-    )
-
-    st.caption(
-        "Continuous Multilingual Aspect Sentiment "
-        "& Stance Intelligence Platform"
-    )
-
-    with st.container(border=True):
-
-        st.header(
-            "Project Overview"
+        c1.metric(
+            "Accuracy",
+            f"{float(sentiment_metrics.get('accuracy', 0)):.2%}",
         )
+
+        c2.metric(
+            "Macro Precision",
+            f"{float(sentiment_metrics.get('macro_precision', 0)):.2%}",
+        )
+
+        c3.metric(
+            "Macro Recall",
+            f"{float(sentiment_metrics.get('macro_recall', 0)):.2%}",
+        )
+
+        c4.metric(
+            "Macro F1",
+            f"{float(sentiment_metrics.get('macro_f1', 0)):.2%}",
+        )
+
+        c5.metric(
+            "Weighted F1",
+            f"{float(sentiment_metrics.get('weighted_f1', 0)):.2%}",
+        )
+
+        train_rows = sentiment_metrics.get("train_rows", "—")
+        test_rows = sentiment_metrics.get("test_rows", "—")
 
         st.write(
-            "CMASSIP is an AI-driven language technology "
-            "platform designed for multilingual aspect "
-            "sentiment, target-aware stance, valence, "
-            "arousal and evidence analysis."
+            f"**Evaluation split:** {train_rows:,} training rows and "
+            f"{test_rows:,} test rows (80/20, random seed 42)."
+            if isinstance(train_rows, int) and isinstance(test_rows, int)
+            else "**Evaluation split:** 80/20 with random seed 42."
         )
 
-    st.header(
-        "Project Information"
-    )
+        sentiment_report = sentiment_metrics.get(
+            "classification_report", {}
+        )
 
-    c1, c2, c3 = st.columns(3)
+        if sentiment_report:
+
+            st.subheader("Classification Report")
+
+            report_rows = []
+
+            for label, values in sentiment_report.items():
+
+                if not isinstance(values, dict):
+                    continue
+
+                if label in {"accuracy", "macro avg", "weighted avg"}:
+                    display_label = label
+                else:
+                    display_label = str(label).capitalize()
+
+                report_rows.append(
+                    {
+                        "Class": display_label,
+                        "Precision": round(float(values.get("precision", 0)), 4),
+                        "Recall": round(float(values.get("recall", 0)), 4),
+                        "F1": round(float(values.get("f1-score", 0)), 4),
+                        "Support": int(values.get("support", 0)),
+                    }
+                )
+
+            if report_rows:
+                st.dataframe(
+                    pd.DataFrame(report_rows),
+                    use_container_width=True,
+                    hide_index=True,
+                )
+
+        confusion = sentiment_metrics.get(
+            "confusion_matrix"
+        )
+
+        labels = sentiment_metrics.get(
+            "labels", []
+        )
+
+        if confusion:
+
+            st.subheader("Confusion Matrix")
+
+            matrix_df = pd.DataFrame(
+                confusion,
+                index=labels,
+                columns=labels,
+            )
+
+            st.dataframe(
+                matrix_df,
+                use_container_width=True,
+            )
+
+        st.subheader("Dataset Information")
+
+        datasets = sentiment_metrics.get(
+            "datasets", {}
+        )
+
+        dataset_rows = []
+
+        if isinstance(datasets, dict):
+
+            for name, info in datasets.items():
+
+                if name == "combined" or not isinstance(info, dict):
+                    continue
+
+                dataset_rows.append(
+                    {
+                        "Dataset": name,
+                        "Rows": info.get("rows", "—"),
+                        "File": info.get("file", "—"),
+                        "Labels": str(info.get("labels", "—")),
+                    }
+                )
+
+        if dataset_rows:
+            st.dataframe(
+                pd.DataFrame(dataset_rows),
+                use_container_width=True,
+                hide_index=True,
+            )
+
+    st.divider()
+
+    # ========================================================
+    # ABSA EVALUATION
+    # ========================================================
+
+    st.header("ABSA Evaluation")
+
+    if absa_metrics is None:
+
+        st.warning(
+            "ABSA evaluation metrics were not found. "
+            "Run scripts/train_absa_reference.py --limit 6000 first."
+        )
+
+    else:
+
+        c1, c2, c3, c4, c5 = st.columns(5)
+
+        c1.metric(
+            "Accuracy",
+            f"{float(absa_metrics.get('accuracy', 0)):.2%}",
+        )
+
+        c2.metric(
+            "Macro Precision",
+            f"{float(absa_metrics.get('macro_precision', 0)):.2%}",
+        )
+
+        c3.metric(
+            "Macro Recall",
+            f"{float(absa_metrics.get('macro_recall', 0)):.2%}",
+        )
+
+        c4.metric(
+            "Macro F1",
+            f"{float(absa_metrics.get('macro_f1', 0)):.2%}",
+        )
+
+        c5.metric(
+            "Weighted F1",
+            f"{float(absa_metrics.get('weighted_f1', 0)):.2%}",
+        )
+
+        train_rows = absa_metrics.get("train_rows", "—")
+        test_rows = absa_metrics.get("test_rows", "—")
+        total_rows = absa_metrics.get("rows", "—")
+
+        if isinstance(train_rows, int) and isinstance(test_rows, int):
+            st.write(
+                f"**Dataset:** SemEval-2014 Task 4 ABSA | "
+                f"**Total:** {total_rows:,} rows | "
+                f"**Train:** {train_rows:,} | **Test:** {test_rows:,} "
+                f"(80/20, random seed 42)."
+            )
+        else:
+            st.write(
+                f"**Dataset:** SemEval-2014 Task 4 ABSA | "
+                f"**Total:** {total_rows:,} rows | "
+                f"80/20 split, random seed 42."
+            )
+
+        st.caption(
+            "Reference model: "
+            + str(
+                absa_metrics.get(
+                    "model",
+                    "TF-IDF + Logistic Regression",
+                )
+            )
+        )
+
+        absa_report = absa_metrics.get(
+            "classification_report", {}
+        )
+
+        if absa_report:
+
+            st.subheader("Classification Report")
+
+            report_rows = []
+
+            for label, values in absa_report.items():
+
+                if not isinstance(values, dict):
+                    continue
+
+                display_label = (
+                    label
+                    if label in {"accuracy", "macro avg", "weighted avg"}
+                    else str(label).capitalize()
+                )
+
+                report_rows.append(
+                    {
+                        "Class": display_label,
+                        "Precision": round(float(values.get("precision", 0)), 4),
+                        "Recall": round(float(values.get("recall", 0)), 4),
+                        "F1": round(float(values.get("f1-score", 0)), 4),
+                        "Support": int(values.get("support", 0)),
+                    }
+                )
+
+            if report_rows:
+                st.dataframe(
+                    pd.DataFrame(report_rows),
+                    use_container_width=True,
+                    hide_index=True,
+                )
+
+        confusion = absa_metrics.get(
+            "confusion_matrix"
+        )
+
+        labels = absa_metrics.get(
+            "labels", []
+        )
+
+        if confusion:
+
+            st.subheader("Confusion Matrix")
+
+            matrix_df = pd.DataFrame(
+                confusion,
+                index=labels,
+                columns=labels,
+            )
+
+            st.dataframe(
+                matrix_df,
+                use_container_width=True,
+            )
+
+        label_distribution = absa_metrics.get(
+            "label_distribution", {}
+        )
+
+        if label_distribution:
+
+            st.subheader("ABSA Label Distribution")
+
+            st.bar_chart(
+                pd.Series(label_distribution)
+            )
+
+    st.divider()
+
+    # ========================================================
+    # OTHER PROJECT COMPONENTS
+    # ========================================================
+
+    st.header("Other Evaluation Components")
+
+    c1, c2 = st.columns(2)
 
     with c1:
-
         with st.container(border=True):
-
-            st.caption("DOMAIN")
-
-            st.write(
-                "AI-Driven Language Technologies"
+            st.subheader("🧭 Stance Detection")
+            st.write("BART-MNLI target-aware zero-shot NLI.")
+            st.caption(
+                "A labelled stance benchmark has not yet been evaluated, "
+                "so no formal stance accuracy is reported here."
             )
 
     with c2:
-
         with st.container(border=True):
-
-            st.caption("CORE")
-
-            st.write(
-                "ABSA + Stance + Affect"
+            st.subheader("📐 Valence / Arousal")
+            st.write("Reference affect estimator currently used by the platform.")
+            st.caption(
+                "Formal valence/arousal evaluation is not yet reported."
             )
-
-    with c3:
-
-        with st.container(border=True):
-
-            st.caption("INPUT")
-
-            st.write(
-                "Multilingual Text & Documents"
-            )
-
-    st.header(
-        "Research Objectives"
-    )
-
-    objectives = [
-        (
-            "O1",
-            "Problem & Engineering Contract",
-            "Define multilingual aspect, opinion, holder, "
-            "stance, valence and arousal requirements.",
-        ),
-        (
-            "O2",
-            "Reference Baselines",
-            "Build reproducible reference implementations, "
-            "fixtures, tests and baseline measurements.",
-        ),
-        (
-            "O3",
-            "Joint Intelligence",
-            "Support aspect/opinion extraction together "
-            "with valence and arousal prediction.",
-        ),
-        (
-            "O4",
-            "Transfer & Calibration",
-            "Evaluate cross-domain transfer, calibration, "
-            "subgroups and evidence review.",
-        ),
-        (
-            "O5",
-            "Acceptance & Impact",
-            "Validate acceptance criteria, negative cases, "
-            "reproducibility and operating guidance.",
-        ),
-    ]
-
-    for code, title, description in objectives:
-
-        with st.container(border=True):
-
-            st.caption(code)
-
-            st.subheader(
-                title
-            )
-
-            st.write(
-                description
-            )
-
-    st.header(
-        "Platform Capabilities"
-    )
-
-    capabilities = [
-        "🌐 Multilingual language detection",
-        "🎯 Aspect and opinion extraction",
-        "💭 Aspect-based sentiment analysis",
-        "🧭 Target-aware stance analysis",
-        "📐 Valence and arousal estimation",
-        "🔎 Evidence-grounded outputs",
-        "📊 Batch document analysis",
-        "📈 Evaluation and insights",
-    ]
-
-    for capability in capabilities:
-
-        st.write(
-            capability
-        )
 
 
 # ============================================================

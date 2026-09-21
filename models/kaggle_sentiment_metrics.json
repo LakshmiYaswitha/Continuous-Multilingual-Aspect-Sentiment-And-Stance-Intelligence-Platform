@@ -1,11 +1,69 @@
 {
   "accuracy": 0.7608173076923077,
+  "macro_precision": 0.5482620282309109,
+  "macro_recall": 0.5933014662540524,
   "macro_f1": 0.5658665210330538,
+  "weighted_f1": 0.7744551126088991,
+  "labels": [
+    "negative",
+    "neutral",
+    "positive"
+  ],
+  "confusion_matrix": [
+    [
+      132,
+      58,
+      66
+    ],
+    [
+      77,
+      122,
+      91
+    ],
+    [
+      139,
+      166,
+      1645
+    ]
+  ],
+  "classification_report": {
+    "negative": {
+      "precision": 0.3793103448275862,
+      "recall": 0.515625,
+      "f1-score": 0.4370860927152318,
+      "support": 256.0
+    },
+    "neutral": {
+      "precision": 0.35260115606936415,
+      "recall": 0.4206896551724138,
+      "f1-score": 0.3836477987421384,
+      "support": 290.0
+    },
+    "positive": {
+      "precision": 0.9128745837957825,
+      "recall": 0.8435897435897436,
+      "f1-score": 0.8768656716417911,
+      "support": 1950.0
+    },
+    "accuracy": 0.7608173076923077,
+    "macro avg": {
+      "precision": 0.5482620282309109,
+      "recall": 0.5933014662540524,
+      "f1-score": 0.5658665210330538,
+      "support": 2496.0
+    },
+    "weighted avg": {
+      "precision": 0.7930541754558307,
+      "recall": 0.7608173076923077,
+      "f1-score": 0.7744551126088991,
+      "support": 2496.0
+    }
+  },
   "train_rows": 9980,
   "test_rows": 2496,
   "datasets": {
     "amazon": {
-      "file": "C:\\Users\\YaswithaMaram\\Downloads\\cmassip\\data\\raw\\amazon\\amazon_reviews_us_Electronics_v1_00.tsv",
+      "file": "C:\\Users\\YaswithaMaram\\OneDrive\\Desktop\\cmassip\\data\\raw\\amazon\\amazon_reviews_us_Electronics_v1_00.tsv",
       "rows": 10000,
       "labels": {
         "positive": 8710,
@@ -14,7 +72,7 @@
       }
     },
     "hindi": {
-      "file": "C:\\Users\\YaswithaMaram\\Downloads\\cmassip\\data\\raw\\hindi\\iitp-movie-reviews\\hi\\hi-train.csv",
+      "file": "C:\\Users\\YaswithaMaram\\OneDrive\\Desktop\\cmassip\\data\\raw\\hindi\\iitp-movie-reviews\\hi\\hi-train.csv",
       "rows": 2480,
       "labels": {
         "positive": 1042,
@@ -28,6 +86,10 @@
         "positive": 9750,
         "neutral": 1448,
         "negative": 1278
+      },
+      "language_sources": {
+        "amazon": 10000,
+        "hindi": 2476
       }
     }
   }

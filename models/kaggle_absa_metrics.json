@@ -1,5 +1,93 @@
 {
+  "task": "Aspect-Based Sentiment Analysis",
+  "dataset": "SemEval-2014 Task 4 Aspect-Based Sentiment Analysis",
+  "dataset_source": "charitarth/semeval-2014-task-4-aspectbasedsentimentanalysis",
+  "rows": 6000,
+  "train_rows": 4800,
+  "test_rows": 1200,
+  "test_size": 0.2,
+  "random_state": 42,
+  "labels": [
+    "conflict",
+    "negative",
+    "neutral",
+    "positive"
+  ],
+  "label_distribution": {
+    "positive": 3129,
+    "negative": 1643,
+    "neutral": 1093,
+    "conflict": 135
+  },
   "accuracy": 0.7033333333333334,
+  "macro_precision": 0.5131341993808974,
+  "macro_recall": 0.46354167177083194,
   "macro_f1": 0.46763824233168205,
-  "rows": 6000
+  "weighted_f1": 0.6752412674549488,
+  "classification_report": {
+    "conflict": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 27.0
+    },
+    "negative": {
+      "precision": 0.6239067055393586,
+      "recall": 0.6504559270516718,
+      "f1-score": 0.6369047619047619,
+      "support": 329.0
+    },
+    "neutral": {
+      "precision": 0.6875,
+      "recall": 0.30275229357798167,
+      "f1-score": 0.42038216560509556,
+      "support": 218.0
+    },
+    "positive": {
+      "precision": 0.7411300919842313,
+      "recall": 0.9009584664536742,
+      "f1-score": 0.8132660418168709,
+      "support": 626.0
+    },
+    "accuracy": 0.7033333333333334,
+    "macro avg": {
+      "precision": 0.5131341993808974,
+      "recall": 0.46354167177083194,
+      "f1-score": 0.46763824233168205,
+      "support": 1200.0
+    },
+    "weighted avg": {
+      "precision": 0.6825731197538147,
+      "recall": 0.7033333333333334,
+      "f1-score": 0.6752412674549488,
+      "support": 1200.0
+    }
+  },
+  "confusion_matrix": [
+    [
+      0,
+      12,
+      1,
+      14
+    ],
+    [
+      0,
+      214,
+      18,
+      97
+    ],
+    [
+      0,
+      66,
+      66,
+      86
+    ],
+    [
+      0,
+      51,
+      11,
+      564
+    ]
+  ],
+  "model": "TF-IDF (unigram + bigram) + Logistic Regression"
 }
